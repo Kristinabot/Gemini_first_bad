@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ремонт Контроль ✨</title>
+    <title>Ремонт Контроль PRO ✨</title>
+    <script src="https://telegram.org"></script>
     <style>
         :root {
             --bg-color: #f8fafc;
@@ -18,169 +19,74 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            margin: 0;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            margin: 0; padding: 16px;
+            display: flex; flex-direction: column; align-items: center;
         }
         .card {
-            background: var(--card-bg);
-            border-radius: 20px;
+            background: var(--card-bg); border-radius: 20px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            padding: 20px;
-            width: 100%;
-            max-width: 400px;
-            box-sizing: border-box;
-            margin-bottom: 12px;
+            padding: 20px; width: 100%; max-width: 400px;
+            box-sizing: border-box; margin-bottom: 12px;
         }
         h2 { margin: 0 0 12px 0; font-size: 1.15rem; display: flex; align-items: center; gap: 8px; }
-        
-        .progress-container {
-            background: #e2e8f0;
-            border-radius: 999px;
-            height: 10px;
-            width: 100%;
-            margin: 12px 0 8px 0;
-            overflow: hidden;
-        }
-        .progress-bar {
-            background: linear-gradient(90deg, var(--primary), #818cf8);
-            height: 100%;
-            width: 0%;
-            transition: width 0.4s ease;
-        }
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 12px;
-        }
-        .stat-item {
-            background: #f1f5f9;
-            padding: 10px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-        }
+        .progress-container { background: #e2e8f0; border-radius: 999px; height: 10px; overflow: hidden; margin: 12px 0; }
+        .progress-bar { background: linear-gradient(90deg, var(--primary), #818cf8); height: 100%; width: 0%; transition: width 0.4s; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stat-item { background: #f1f5f9; padding: 10px; border-radius: 12px; font-size: 0.85rem; }
         .stat-item span { color: var(--text-muted); display: block; margin-bottom: 2px; }
-        .stat-item strong { font-size: 1rem; }
-
-        .btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 12px;
-            width: 100%;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 0.95rem;
-            margin-top: 8px;
-        }
-        .btn-secondary { background: #e2e8f0; color: var(--text-main); margin-bottom: 8px; }
-
-        .btn-furnace-small {
-            background: linear-gradient(135deg, #dc2626, #b91c1c);
-            color: white;
-            padding: 8px 16px;
-            font-size: 0.85rem;
-            border-radius: 10px;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-block;
-            margin-top: 5px;
-        }
-
+        .btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; font-size: 0.95rem; }
+        .btn-secondary { background: #e2e8f0; color: var(--text-main); margin-top: 8px; font-size: 0.9rem; }
+        .btn-furnace-small { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 8px 16px; font-size: 0.85rem; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; margin-top: 5px; }
         .room-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-        .room-tag {
-            background: #f1f5f9;
-            padding: 6px 12px;
-            border-radius: 999px;
-            font-size: 0.85rem;
-            cursor: pointer;
-        }
+        .room-tag { background: #f1f5f9; padding: 6px 12px; border-radius: 999px; font-size: 0.85rem; cursor: pointer; }
         .room-tag.active { background: var(--primary); color: white; }
-
         .input-group { margin-bottom: 10px; }
         .input-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
-        .input-group input, .input-group select {
-            width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem;
-        }
-
-        .expense-item {
-            padding: 10px 0; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem;
-        }
-        .expense-item:last-child { border: none; }
-        .exp-info { display: flex; flex-direction: column; }
-        .exp-meta { font-size: 0.75rem; color: var(--text-muted); }
-        .exp-amount { font-weight: 700; color: var(--danger); }
-
-        #flame-canvas {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; display: none;
-        }
+        .input-group input, .input-group select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem; }
+        .expense-item { padding: 10px 0; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+        #flame-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; display: none; }
     </style>
 </head>
 <body>
-
     <canvas id="flame-canvas"></canvas>
 
-    <!-- Установка бюджета -->
-    <div class="card" id="setup-card">
-        <h2>🏛️ Начало ремонта</h2>
-        <div class="input-group">
-            <label>Задайте ваш изначальный плановый бюджет (₽):</label>
-            <input type="number" id="init-budget" value="500000">
-        </div>
-        <button class="btn" onclick="startBudget()">Установить бюджет 📊</button>
-    </div>
-
-    <!-- Бюджет (Изначально скрыт, пока не введут сумму) -->
-    <div class="card" id="budget-card" style="display:none;">
+    <!-- Бюджет и проценты -->
+    <div class="card">
         <h2>📊 Бюджет Ремонта</h2>
         <div style="display: flex; justify-content: space-between; font-weight: bold;">
             <span>Потрачено: <span id="percent-text" style="color:var(--primary);">0%</span></span>
             <span id="total-spent">0 ₽</span>
         </div>
-        <div class="progress-container">
-            <div id="progress-bar" class="progress-bar"></div>
-        </div>
+        <div class="progress-container"><div id="progress-bar" class="progress-bar"></div></div>
         <div class="stats-grid">
-            <div class="stat-item">
-                <span>План трат 🏛️</span>
-                <strong id="ui-plan">0 ₽</strong>
-            </div>
-            <div class="stat-item">
-                <span>Остаток 🪙</span>
-                <strong id="budget-left" style="color: var(--accent-green);">0 ₽</strong>
-            </div>
+            <div class="stat-item"><span>План трат 🏛️</span><strong id="ui-plan">500 000 ₽</strong></div>
+            <div class="stat-item"><span>Остаток 🪙</span><strong id="budget-left" style="color:var(--accent-green);">500 000 ₽</strong></div>
+        </div>
+    </div>
+
+    <!-- Управление бюджетом -->
+    <div class="card">
+        <h2>🏛️ Изменить плановый бюджет</h2>
+        <div style="display:flex; gap:8px;">
+            <input type="number" id="new-budget" placeholder="Введи общую сумму плана" style="width:70%; padding:10px; border-radius:12px; border:1px solid #cbd5e1;">
+            <button class="btn" onclick="saveBudget()" style="width:30%;">ОК</button>
         </div>
     </div>
 
     <!-- Совместный доступ -->
-    <div class="card" id="share-card" style="display:none;">
+    <div class="card">
         <h2>👥 Совместный доступ</h2>
-        <button class="btn btn-secondary" onclick="generatePartnerLink()">🔗 Связать устройства (Муж/Жена)</button>
-        <div id="link-display" style="font-size:0.8rem; color:var(--accent-green); margin-top:5px; word-break:break-all;"></div>
+        <button class="btn btn-secondary" onclick="shareAccess()">🔗 Привязать устройство супруга(и)</button>
     </div>
 
-    <!-- Ввод трат -->
-    <div class="card" id="input-card" style="display:none;">
-        <h2>➕ Добавить Расход 💸</h2>
-        <div class="input-group">
-            <label>Имя или Ник (кто тратит):</label>
-            <input type="text" id="user-name" placeholder="Например: Жена, Муж">
-        </div>
-        <div class="input-group">
-            <label>Что куплено (Описание):</label>
-            <input type="text" id="exp-desc" placeholder="Плитка, Краска, Оплата работы">
-        </div>
-        <div class="input-group">
-            <label>Сумма (₽):</label>
-            <input type="number" id="exp-val" placeholder="0">
-        </div>
-        <div class="input-group">
-            <label>Зона / Комната 🧱:</label>
+    <!-- Ввод расходов -->
+    <div class="card">
+        <h2>➕ Добавить Расход вручную</h2>
+        <button class="btn btn-secondary" onclick="scanReceiptNotice()" style="margin-top:0; margin-bottom:12px; background:#f1f5f9;">📸 Распознать чек по фото</button>
+        <div class="input-group"><label>Кто тратит (Имя или Ник):</label><input type="text" id="user-name" value="Пользователь"></div>
+        <div class="input-group"><label>Что куплено (Описание):</label><input type="text" id="exp-desc" placeholder="Плитка, обои, аванс..."></div>
+        <div class="input-group"><label>Сумма (₽):</label><input type="number" id="exp-val" placeholder="0"></div>
+        <div class="input-group"><label>Зона / Комната 🧱:</label>
             <select id="exp-room">
                 <option value="Кухня">🍳 Кухня</option>
                 <option value="Ванная">🛁 Ванная</option>
@@ -188,13 +94,13 @@
                 <option value="Аванс прорабу">💸 Аванс прорабу</option>
             </select>
         </div>
-        <button class="btn" onclick="addNewExpense()">Добавить в ленту ✨</button>
+        <button class="btn" onclick="addExpense()">Добавить в ленту ✨</button>
     </div>
 
     <!-- Фильтр комнат -->
-    <div class="card" id="filter-card" style="display:none;">
+    <div class="card">
         <h2>🧱 Фильтр зон</h2>
-        <div class="room-tags" id="tags-list">
+        <div class="room-tags">
             <span class="room-tag active" onclick="filterRoom('Все', this)">Все 🏡</span>
             <span class="room-tag" onclick="filterRoom('Кухня', this)">🍳 Кухня</span>
             <span class="room-tag" onclick="filterRoom('Ванная', this)">🛁 Ванная</span>
@@ -204,129 +110,151 @@
     </div>
 
     <!-- Лента расходов -->
-    <div class="card" id="feed-card" style="display:none;">
+    <div class="card">
         <h2>📜 Лента расходов</h2>
         <div id="expense-feed"></div>
     </div>
 
-    <!-- Кнопка разгрузки -->
-    <div class="card" id="furnace-card" style="display:none; text-align: center; background: #fff5f5; border: 1px solid #fee2e2;">
-        <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Психологическая разгрузка:</span>
+    <!-- Аккуратная кнопка котла -->
+    <div class="card" style="text-align: center; background: #fff5f5; border: 1px solid #fee2e2;">
+        <span style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Психологическая разгрузка:</span>
         <button class="btn btn-furnace-small" onclick="burnContractor()">🔥 Отправить прораба в кипящий котел</button>
     </div>
 
     <script>
-        let planBudget = 0;
-        let currentSpent = 0;
+        // Подключаемся к стабильному круглосуточному облачному бэкенду
+        const BACKEND_URL = "https://railway.app"; 
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const pid = urlParams.get('pid') || "default_demo";
 
-        function startBudget() {
-            const val = parseInt(document.getElementById('init-budget').value);
-            if (!val || val <= 0) return;
-            planBudget = val;
-            
-            document.getElementById('setup-card').style.display = 'none';
-            document.getElementById('budget-card').style.display = 'block';
-            document.getElementById('share-card').style.display = 'block';
-            document.getElementById('input-card').style.display = 'block';
-            document.getElementById('filter-card').style.display = 'block';
-            document.getElementById('feed-card').style.display = 'block';
-            document.getElementById('furnace-card').style.display = 'block';
-            
-            updateBudgetUI();
+        let planBudget = 500000;
+        let expenses = [];
+        let tg = null;
+
+        try {
+            if (window.Telegram && window.Telegram.WebApp) {
+                tg = window.Telegram.WebApp;
+                tg.ready();
+                tg.expand();
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const user = tg.initDataUnsafe.user;
+                    document.getElementById('user-name').value = user.username ? '@' + user.username : user.first_name;
+                }
+            }
+        } catch(e){}
+
+        async function loadData() {
+            try {
+                const res = await fetch(`${BACKEND_URL}/api/get_data?pid=${pid}`);
+                const data = await res.json();
+                planBudget = data.budget;
+                expenses = data.expenses;
+                renderUI();
+            } catch(e) { console.error("Ошибка сервера"); }
         }
 
-        function generatePartnerLink() {
-            document.getElementById('link-display').innerText = "🔗 Ссылка скопирована! Отправьте её супругу(е).";
-        }
-
-        function updateBudgetUI() {
-            let percent = planBudget > 0 ? Math.round((currentSpent / planBudget) * 100) : 0;
+        function renderUI() {
+            let totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
+            let percent = planBudget > 0 ? Math.round((totalSpent / planBudget) * 100) : 0;
+            
             document.getElementById('percent-text').innerText = percent + '%';
             document.getElementById('progress-bar').style.width = Math.min(percent, 100) + '%';
-            document.getElementById('total-spent').innerText = currentSpent.toLocaleString() + ' ₽';
+            document.getElementById('total-spent').innerText = totalSpent.toLocaleString() + ' ₽';
             document.getElementById('ui-plan').innerText = planBudget.toLocaleString() + ' ₽';
-            document.getElementById('budget-left').innerText = (planBudget - currentSpent).toLocaleString() + ' ₽';
+            document.getElementById('budget-left').innerText = (planBudget - totalSpent).toLocaleString() + ' ₽';
+
+            const feed = document.getElementById('expense-feed');
+            feed.innerHTML = '';
+            if(expenses.length === 0) {
+                feed.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.9rem; padding:10px;">Лента пуста. Добавьте первый расход!</div>';
+            }
+            expenses.forEach(e => {
+                const item = document.createElement('div');
+                item.className = 'expense-item';
+                item.setAttribute('data-room', e.category);
+                item.innerHTML = `<div><strong>${e.description}</strong><br><small>${e.category} • ${e.user_name}</small></div><span class="exp-amount">-${e.amount.toLocaleString()} ₽</span>`;
+                feed.appendChild(item);
+            });
         }
 
-        function addNewExpense() {
+        async function saveBudget() {
+            const val = parseInt(document.getElementById('new-budget').value);
+            if(!val || val <= 0) return;
+            await fetch(`${BACKEND_URL}/api/set_budget`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({pid: pid, budget: val})
+            });
+document.getElementById('new-budget').value = '';
+loadData();
+}
+        async function addExpense() {
 const name = document.getElementById('user-name').value || "Пользователь";
 const desc = document.getElementById('exp-desc').value;
 const val = parseInt(document.getElementById('exp-val').value);
 const room = document.getElementById('exp-room').value;
-if (!desc || !val) return;
-currentSpent += val;
-updateBudgetUI();
-const feed = document.getElementById('expense-feed');
-const item = document.createElement('div');
-item.className = 'expense-item';
-item.setAttribute('data-room', room);
-item.innerHTML = <div class="exp-info"> <strong>${desc}</strong> <span class="exp-meta">${room} • ${name}</span> </div> <span class="exp-amount">-${val.toLocaleString()} ₽</span>;
-feed.insertBefore(item, feed.firstChild);
+if(!desc || !val || val <= 0) return;
+await fetch(${BACKEND_URL}/api/add_expense, {
+method: 'POST',
+headers: {'Content-Type': 'application/json'},
+body: JSON.stringify({pid: pid, amount: val, category: room, description: desc, user_name: name})
+});
 document.getElementById('exp-desc').value = '';
 document.getElementById('exp-val').value = '';
+loadData();
 }
-function filterRoom(room, element) {
-document.querySelectorAll('.room-tag').forEach(tag => tag.classList.remove('active'));
-element.classList.add('active');
-document.querySelectorAll('.expense-item').forEach(item => {
-if (room === 'Все' || item.getAttribute('data-room') === room) {
-item.style.display = 'flex';
+function shareAccess() {
+if(tg) {
+tg.showAlert(🔗 Чтобы подключить супруга(у), закройте это окно и перешлите ему/ей специальную ссылку-приглашение из чата бота!);
 } else {
-item.style.display = 'none';
+alert("Используйте ссылку из чата бота для подключения супруга.");
 }
+}
+function scanReceiptNotice() {
+if(tg) {
+tg.showAlert("📸 Просто пришлите ФОТО ЧЕКА прямо в чат с ботом. Нейросеть автоматически распознает сумму, категорию и добавит её сюда!");
+} else {
+alert("Отправьте фото чека боту в Telegram.");
+}
+}
+function filterRoom(room, el) {
+document.querySelectorAll('.room-tag').forEach(t => t.classList.remove('active'));
+el.classList.add('active');
+document.querySelectorAll('.expense-item').forEach(item => {
+if(room === 'Все' || item.getAttribute('data-room') === room) item.style.display = 'flex';
+else item.style.display = 'none';
 });
 }
 function burnContractor() {
+if (tg && tg.HapticFeedback) {
+try { tg.HapticFeedback.notificationOccurred('error'); } catch(e){}
+}
 const canvas = document.getElementById('flame-canvas');
 const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.width = window.innerWidth; canvas.height = window.innerHeight;
 canvas.style.display = 'block';
 let particles = [];
 function createParticle() {
-return {
-x: canvas.width / 2 + (Math.random() * 160 - 80),
-y: canvas.height + 20,
-speedX: Math.random() * 6 - 3,
-speedY: Math.random() * -10 - 6,
-radius: Math.random() * 35 + 15,
-life: 1.0,
-decay: Math.random() * 0.02 + 0.015
-};
+return { x: canvas.width/2 + (Math.random()*160 - 80), y: canvas.height+20, speedX: Math.random()6-3, speedY: Math.random()-10-6, radius: Math.random()*35+15, life: 1.0, decay: Math.random()0.02+0.015 };
 }
 for(let i=0; i<50; i++) particles.push(createParticle());
 let duration = 0;
-function animateFlames() {
-ctx.clearRect(0, 0, canvas.width, canvas.height);
-ctx.globalCompositeOperation = 'screen';
-if (duration < 120) {
-for(let i=0; i<6; i++) particles.push(createParticle());
-}
-for (let i = 0; i < particles.length; i++) {
-let p = particles[i];
-ctx.beginPath();
-let gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius);
-gradient.addColorStop(0, rgba(255, 150, 0, ${p.life}));
-gradient.addColorStop(0.4, rgba(255, 50, 0, ${p.life * 0.5}));
-gradient.addColorStop(1, 'rgba(0,0,0,0)');
-ctx.fillStyle = gradient;
-ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-ctx.fill();
-p.x += p.speedX;
-p.y += p.speedY;
-p.life -= p.decay;
-p.radius -= 0.2;
-if (p.life <= 0 || p.radius <= 0) {
-particles.splice(i, 1);
-i--;
-}
+function animate() {
+ctx.clearRect(0,0,canvas.width,canvas.height); ctx.globalCompositeOperation = 'screen';
+if(duration < 120) { for(let i=0; i<6; i++) particles.push(createParticle()); }
+for(let i=0; i<particles.length; i++) {
+let p = particles[i]; ctx.beginPath();
+let g = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.radius);
+g.addColorStop(0, rgba(255,150,0,${p.life})); g.addColorStop(0.4, rgba(255,50,0,${p.life*0.5})); g.addColorStop(1, 'rgba(0,0,0,0)');
+ctx.fillStyle = g; ctx.arc(p.x,p.y,p.radius,0,Math.PI2); ctx.fill();
+p.x += p.speedX; p.y += p.speedY; p.life -= p.decay; p.radius -= 0.2;
+if(p.life <= 0 || p.radius <= 0) { particles.splice(i,1); i--; }
 }
 duration++;
-if (particles.length > 0) {
-requestAnimationFrame(animateFlames);
-} else {
-canvas.style.display = 'none';
+if(particles.length > 0) requestAnimationFrame(animate);
+else canvas.style.display = 'none';
 }
+animate();
 }
-animateFlames();
-}
+loadData();
