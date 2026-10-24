@@ -7,7 +7,7 @@ from telebot import types
 from flask import Flask, render_template, jsonify, request
 from flask_cors import CORS
 
-# ТЕПЕРЬ ТУТ НЕТ ПАРОЛЕЙ! Сервер сам подставит их из защищенной памяти
+# БЕЗОПАСНОСТЬ: Токен берётся из настроек Render, хакеры его не украдут!
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 OPENROUTER_KEY = os.environ.get("OPENROUTER_KEY", "no_key")
 
@@ -16,13 +16,17 @@ if not BOT_TOKEN:
 
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
-CORS(app)
+CORS(app) # Разрешаем фронтенду общаться с сервером без блокировок
 
+# ССЫЛКА НА ВАШ ИНТЕРФЕЙС НА GITHUB PAGES (С большими буквами и слэшем на конце!)
+WEBAPP_URL = "https://kristinabot.github.io/RepairExpense/"
+
+# --- ИНИЦИАЛИЗАЦИЯ БАЗЫ ДАННЫХ ---
 def init_db():
     conn = sqlite3.connect('remont.db')
     cursor = conn.cursor()
     cursor.execute('''CREATE TABLE IF NOT EXISTS projects 
-                      (id TEXT PRIMARY KEY, budget INTEGER, owner_id INTEGER, spouse_id INTEGER)''')
+                      (id TEXT PRIMARY KEY, budget INTEGER)''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS expenses 
                       (id INTEGER PRIMARY KEY AUTOINCREMENT, project_id TEXT, amount INTEGER, 
                        category TEXT, description TEXT, user_name TEXT)''')
@@ -34,44 +38,34 @@ init_db()
 def get_or_create_project(user_id):
     conn = sqlite3.connect('remont.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT id, budget FROM projects WHERE owner_id=? OR spouse_id=?", (user_id, user_id))
+    cursor.execute("SELECT id, budget FROM projects WHERE id=?", (str(user_id),))
     row = cursor.fetchone()
     if row:
         project_id, budget = row[0], row[1]
     else:
         project_id = str(user_id)
-        cursor.execute("INSERT INTO projects (id, budget, owner_id) VALUES (?, ?, ?)", (project_id, 500000, user_id))
+        cursor.execute("INSERT INTO projects (id, budget) VALUES (?, ?)", (project_id, 500000))
         conn.commit()
         budget = 500000
     conn.close()
     return project_id, budget
 
+# --- ЛОГИКА ТЕЛЕГРАМ БОТА ---
 @bot.message_handler(commands=['start'])
 def start_command(message):
     user_id = message.from_user.id
-    args = message.text.split()
-    conn = sqlite3.connect('remont.db')
-    cursor = conn.cursor()
-
-    if len(args) > 1 and args[1].startswith('join_'):
-        parent_project_id = args[1].replace('join_', '')
-        cursor.execute("UPDATE projects SET spouse_id=? WHERE id=?", (user_id, parent_project_id))
-        conn.commit()
-        bot.reply_to(message, "🎉 Вы успешно подключились к общему ремонту!")
-        conn.close()
-        return
-
     project_id, _ = get_or_create_project(user_id)
-    conn.close()
 
-    markup = types.InlineKeyboardMarkup()
-    btn_app = types.InlineKeyboardButton("📊 Открыть Ремонт-Панель", web_app=types.WebAppInfo(url=f"https://github.io{project_id}"))
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    # Бот прикрепит вашу живую ссылку GitHub к кнопке в Телеграме!
+    btn_app = types.KeyboardButton("📊 Открыть Ремонт-Панель", web_app=types.WebAppInfo(url=f"{WEBAPP_URL}?pid={project_id}"))
     markup.add(btn_app)
-
+    
     welcome_text = (
-        "🔨 Менеджер Ремонта запущен круглосуточно!\n\n"
-        "👥 Ссылка для подключения мужа/жены:\n"
-        f"https://t.me{bot.get_me().username}?start=join_{project_id}"
+        "🔨 Менеджер ремонта готов к работе!\n\n"
+        "Нажмите кнопку ниже, чтобы открыть вашу личную ремонт-панель.\n"
+        "Вы можете менять бюджет, фильтровать комнаты и даже отправлять прораба в огненный котел!\n\n"
+        "📸 Чтобы добавить расход по чеку: просто пришлите ФОТО чека прямо в этот чат."
     )
     bot.send_message(message.chat.id, welcome_text, reply_markup=markup)
 
@@ -80,9 +74,9 @@ def handle_receipt(message):
     user_id = message.from_user.id
     project_id, _ = get_or_create_project(user_id)
     user_name = message.from_user.username or message.from_user.first_name
-    bot.send_message(message.chat.id, "📸 Чек получен! Нейросеть начинает сканирование...")
+    bot.send_message(message.chat.id, "📸 Чек получен! Идёт сканирование...")
 
-    # Временный автоматический ввод, пока не активируем OpenRouter на сервере
+    # Автоматическая заглушка трат
     amount, category, desc = 4500, "Ванная", "Чек обработан сервером"
     
     conn = sqlite3.connect('remont.db')
@@ -91,11 +85,12 @@ def handle_receipt(message):
                    (project_id, amount, category, desc, user_name))
     conn.commit()
     conn.close()
-    bot.send_message(message.chat.id, f"✅ Чек добавлен в общую базу!\n💰 Сумма: {amount} ₽\n🧱 Зона: {category}")
+    bot.send_message(message.chat.id, f"✅ Чек добавлен в базу через сервер!\n💰 Сумма: {amount} ₽\n🧱 Зона: {category}")
 
+# --- API ДЛЯ ИНТЕРФЕЙСА (GITHUB) ---
 @app.route('/api/get_data')
 def get_data():
-    pid = request.args.get('pid')
+    pid = request.args.get('pid', 'demo')
     conn = sqlite3.connect('remont.db')
     cursor = conn.cursor()
     cursor.execute("SELECT budget FROM projects WHERE id=?", (pid,))
@@ -123,25 +118,14 @@ def set_budget():
     data = request.json
     conn = sqlite3.connect('remont.db')
     cursor = conn.cursor()
-    cursor.execute("UPDATE projects SET budget=? WHERE id=?", (data['budget'], data['pid']))
-    conn.commit()
-    conn.close()
-    return jsonify({"status": "ok"})
-
-@app.route('/api/link_spouse', methods=['POST'])
-def link_spouse():
-    data = request.json
-    conn = sqlite3.connect('remont.db')
-    cursor = conn.cursor()
-    cursor.execute("UPDATE projects SET spouse_id=? WHERE id=?", (data['spouse_id'], data['pid']))
+    cursor.execute("INSERT OR REPLACE INTO projects (id, budget) VALUES (?, ?)", (data['pid'], data['budget']))
     conn.commit()
     conn.close()
     return jsonify({"status": "ok"})
 
 def run_flask():
-    app.run(host='0.0.0.0', port=10000) # Меняем внутренний порт для Render
+    app.run(host='0.0.0.0', port=10000)
 
 if __name__ == '__main__':
     Thread(target=run_flask).start()
     bot.infinity_polling()
-EOF
