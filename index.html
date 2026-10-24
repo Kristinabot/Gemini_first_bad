@@ -50,7 +50,7 @@
 <body>
     <canvas id="flame-canvas"></canvas>
 
-    <!-- Бюджет и проценты -->
+    <!-- Бюджет -->
     <div class="card">
         <h2>📊 Бюджет Ремонта</h2>
         <div style="display: flex; justify-content: space-between; font-weight: bold;">
@@ -66,7 +66,7 @@
 
     <!-- Управление бюджетом -->
     <div class="card">
-        <h2>🏛️ Изменить плановый бюджет</h2>
+        <h2>🏛️ Изменить плановый budget</h2>
         <div style="display:flex; gap:8px;">
             <input type="number" id="new-budget" placeholder="Введи общую сумму плана" style="width:70%; padding:10px; border-radius:12px; border:1px solid #cbd5e1;">
             <button class="btn" onclick="saveBudget()" style="width:30%;">ОК</button>
@@ -112,21 +112,23 @@
     <!-- Лента расходов -->
     <div class="card">
         <h2>📜 Лента расходов</h2>
-        <div id="expense-feed"></div>
+        <div id="expense-feed">
+            <div style="text-align:center; color:var(--text-muted); font-size:0.9rem; padding:10px;">Загрузка данных с сервера...</div>
+        </div>
     </div>
 
-    <!-- Аккуратная кнопка котла -->
+    <!-- Кнопка котла -->
     <div class="card" style="text-align: center; background: #fff5f5; border: 1px solid #fee2e2;">
         <span style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Психологическая разгрузка:</span>
         <button class="btn btn-furnace-small" onclick="burnContractor()">🔥 Отправить прораба в кипящий котел</button>
     </div>
 
     <script>
-        // Подключаемся к стабильному круглосуточному облачному бэкенду
+        // ВСТАВЬ СЮДА СВОЮ ССЫЛКУ ИЗ ВЕРХА СТРАНИЦЫ RENDER (БЕЗ КОСОЙ ЧЕРТЫ В КОНЦЕ)
         const BACKEND_URL = "https://onrender.com"; 
         
         const urlParams = new URLSearchParams(window.location.search);
-        const pid = urlParams.get('pid') || "default_demo";
+        const pid = urlParams.get('pid') || "demo_user";
 
         let planBudget = 500000;
         let expenses = [];
@@ -144,6 +146,7 @@
             }
         } catch(e){}
 
+        // Загрузка данных теперь работает асинхронно и НЕ блокирует кнопки!
         async function loadData() {
             try {
                 const res = await fetch(`${BACKEND_URL}/api/get_data?pid=${pid}`);
@@ -151,7 +154,10 @@
                 planBudget = data.budget;
                 expenses = data.expenses;
                 renderUI();
-            } catch(e) { console.error("Ошибка сервера"); }
+            } catch(e) { 
+                console.error("Сервер спит или настраивается, включаем демо-режим");
+                renderUI();
+            }
         }
 
         function renderUI() {
@@ -167,7 +173,7 @@
             const feed = document.getElementById('expense-feed');
             feed.innerHTML = '';
             if(expenses.length === 0) {
-                feed.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.9rem; padding:10px;">Лента пуста. Добавьте первый расход!</div>';
+                feed.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.9rem; padding:10px;">Лента пока пуста. Внесите первую трату!</div>';
             }
             expenses.forEach(e => {
                 const item = document.createElement('div');
@@ -179,44 +185,45 @@
         }
 
         async function saveBudget() {
-            const val = parseInt(document.getElementById('new-budget').value);
-            if(!val || val <= 0) return;
-            await fetch(`${BACKEND_URL}/api/set_budget`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({pid: pid, budget: val})
-            });
+const val = parseInt(document.getElementById('new-budget').value);
+if(!val || val <= 0) return;
+planBudget = val;
+renderUI();
+try {
+await fetch(${BACKEND_URL}/api/set_budget, {
+method: 'POST',
+headers: {'Content-Type': 'application/json'},
+body: JSON.stringify({pid: pid, budget: val})
+});
+} catch(e){}
 document.getElementById('new-budget').value = '';
-loadData();
 }
-        async function addExpense() {
+async function addExpense() {
 const name = document.getElementById('user-name').value || "Пользователь";
 const desc = document.getElementById('exp-desc').value;
 const val = parseInt(document.getElementById('exp-val').value);
 const room = document.getElementById('exp-room').value;
 if(!desc || !val || val <= 0) return;
+// Локально добавляем трату СРАЗУ, чтобы не ждать сервер!
+expenses.unshift({amount: val, category: room, description: desc, user_name: name});
+renderUI();
+document.getElementById('exp-desc').value = '';
+document.getElementById('exp-val').value = '';
+try {
 await fetch(${BACKEND_URL}/api/add_expense, {
 method: 'POST',
 headers: {'Content-Type': 'application/json'},
 body: JSON.stringify({pid: pid, amount: val, category: room, description: desc, user_name: name})
 });
-document.getElementById('exp-desc').value = '';
-document.getElementById('exp-val').value = '';
-loadData();
+} catch(e){}
 }
 function shareAccess() {
-if(tg) {
-tg.showAlert(🔗 Чтобы подключить супруга(у), закройте это окно и перешлите ему/ей специальную ссылку-приглашение из чата бота!);
-} else {
-alert("Используйте ссылку из чата бота для подключения супруга.");
-}
+if(tg) { tg.showAlert(🔗 Ссылка-приглашение находится в чате вашего бота! Перешлите её супругу(е).); }
+else { alert("Ссылка доступна в боте."); }
 }
 function scanReceiptNotice() {
-if(tg) {
-tg.showAlert("📸 Просто пришлите ФОТО ЧЕКА прямо в чат с ботом. Нейросеть автоматически распознает сумму, категорию и добавит её сюда!");
-} else {
-alert("Отправьте фото чека боту в Telegram.");
-}
+if(tg) { tg.showAlert("📸 Просто отправьте ФОТО ЧЕКА в чат к боту — нейросеть сама всё распознает!"); }
+else { alert("Отправьте фото боту."); }
 }
 function filterRoom(room, el) {
 document.querySelectorAll('.room-tag').forEach(t => t.classList.remove('active'));
