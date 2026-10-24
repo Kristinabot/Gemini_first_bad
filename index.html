@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ремонт Контроль ✨</title>
+    <script src="/templates/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --primary: #4f46e5;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --danger: #ef4444;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.03);
+            padding: 24px;
+            width: 100%;
+            max-width: 420px;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+        h2 { margin: 0 0 16px 0; font-size: 1.25rem; display: flex; align-items: center; gap: 8px; }
+        
+        .progress-container {
+            background: #e2e8f0;
+            border-radius: 999px;
+            height: 12px;
+            width: 100%;
+            margin: 16px 0 8px 0;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, var(--primary), #818cf8);
+            height: 100%;
+            width: 21%;
+            transition: width 0.3s ease;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .stat-item {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+        }
+        .stat-item span { color: var(--text-muted); display: block; margin-bottom: 4px; }
+        .stat-item strong { font-size: 1.1rem; color: var(--text-main); }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 16px;
+            width: 100%;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-secondary {
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+        
+        .btn-furnace-small {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(220, 38, 38, 0.15);
+            border: none;
+            margin-top: 4px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .room-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .room-tag {
+            background: #f1f5f9;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .room-tag.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 6px; }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #cbd5e1;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        .expense-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .expense-item:last-child { border: none; }
+        .exp-info { display: flex; flex-direction: column; gap: 2px; }
+        .exp-name { font-weight: 600; }
+        .exp-meta { font-size: 0.8rem; color: var(--text-muted); }
+        .exp-amount { font-weight: 700; color: var(--danger); }
+
+        #flame-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 9999; display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="flame-canvas"></canvas>
+
+    <div class="card">
+        <h2>📊 Бюджет Ремонта</h2>
+        <div style="display: flex; justify-content: space-between; font-weight: bold;">
+            <span>Потрачено: <span id="percent-text" style="color:var(--primary);">21%</span></span>
+            <span id="total-spent">105 000 ₽</span>
+        </div>
+        <div class="progress-container">
+            <div id="progress-bar" class="progress-bar"></div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span>План трат 🏛️</span>
+                <strong>500 000 ₽</strong>
+            </div>
+            <div class="stat-item">
+                <span>Остаток 🪙</span>
+                <strong id="budget-left" style="color: var(--accent-green);">395 000 ₽</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>➕ Добавить Расход 💸</h2>
+        
+        <button class="btn btn-secondary" onclick="scanReceiptNotification()">📸 Распознать чек по фото</button>
+        <div style="text-align: center; color: var(--text-muted); font-size: 0.8rem; margin-bottom: 12px;">или введите вручную:</div>
+
+        <div class="input-group">
+            <label>Кто тратит (Имя или Ник телеграма):</label>
+            <input type="text" id="user-name" value="Пользователь">
+        </div>
+        <div class="input-group">
+            <label>Что куплено (Описание):</label>
+            <input type="text" id="exp-desc" placeholder="Например: Плитка, Черновые материалы">
+        </div>
+        <div class="input-group">
+            <label>Сумма трат (₽):</label>
+            <input type="number" id="exp-val" placeholder="0">
+        </div>
+        <div class="input-group">
+            <label>Зона / Комната 🧱:</label>
+            <select id="exp-room">
+                <option value="Кухня">🍳 Кухня</option>
+                <option value="Ванная">🛁 Ванная</option>
+                <option value="Спальня">🛏️ Спальня</option>
+                <option value="Аванс прорабу">💸 Аванс прорабу</option>
+            </select>
+        </div>
+        <button class="btn" onclick="addNewExpense()">Добавить расход в ленту ✨</button>
+    </div>
+
+    <div class="card">
+        <h2>🧱 Фильтр зон</h2>
+        <div class="room-tags">
+            <span class="room-tag active" onclick="filterRoom('Все')">Все 🏡</span>
+            <span class="room-tag" onclick="filterRoom('Кухня')">🍳 Кухня</span>
+            <span class="room-tag" onclick="filterRoom('Ванная')">🛁 Ванная</span>
+            <span class="room-tag" onclick="filterRoom('Спальня')">🛏️ Спальня</span>
+            <span class="room-tag" onclick="filterRoom('Аванс прорабу')">💸 Авансы</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>📜 Лента расходов</h2>
+        <div id="expense-feed">
+            <div class="expense-item" data-room="Ванная">
+                <div class="exp-info">
+                    <span class="exp-name">Плитка в ванную 🛁</span>
+                    <span class="exp-meta">Ванная • Муж</span>
+                </div>
+                <span class="exp-amount">-5 000 ₽</span>
+            </div>
+            <div class="expense-item" data-room="Аванс прорабу">
+                <div class="exp-info">
+                    <span class="exp-name">Аванс на черновые материалы 💸</span>
+                    <span class="exp-meta">Аванс прорабу • Жена</span>
+                </div>
+                <span class="exp-amount">-100 000 ₽</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card" style="text-align: center; background: #fff5f5; border: 1px solid #fee2e2;">
+        <span style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Психологическая разгрузка:</span>
+        <button class="btn btn-furnace-small" onclick="burnContractor()">🔥 Отправить прораба в кипящий котел</button>
+    </div>
+
+    <script>
+        let tg = null;
+        let planBudget = 500000;
+        let currentSpent = 105000;
+
+        try {
+            if (window.Telegram && window.Telegram.WebApp) {
+                tg = window.Telegram.WebApp;
+                tg.ready();
+                tg.expand();
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const user = tg.initDataUnsafe.user;
+                    document.getElementById('user-name').value = user.username ? '@' + user.username : user.first_name;
+                }
+            }
+        } catch(e){}
+
+        function scanReceiptNotification() {
+            if (tg) {
+                tg.showAlert("📸 Чтобы распознать чек, просто закройте это окно панели и пришлите фото чека прямо в чат с ботом! Нейросеть сразу добавит его сюда.");
+            } else {
+                alert("Просто отправьте фото чека в чат с ботом!");
+            }
+        }
+
+        function updateBudgetUI() {
+            let percent = Math.round((currentSpent / planBudget) * 100);
+            document.getElementById('percent-text').innerText = percent + '%';
+document.getElementById('progress-bar').style.width = Math.min(percent, 100) + '%';
+document.getElementById('total-spent').innerText = currentSpent.toLocaleString() + ' ₽';
+document.getElementById('budget-left').innerText = (planBudget - currentSpent).toLocaleString() + ' ₽';
+}
+function addNewExpense() {
+const name = document.getElementById('user-name').value;
+const desc = document.getElementById('exp-desc').value;
+const val = parseInt(document.getElementById('exp-val').value);
+const room = document.getElementById('exp-room').value;
+if (!desc || !val) return;
+currentSpent += val;
+updateBudgetUI();
+const feed = document.getElementById('expense-feed');
+const item = document.createElement('div');
+item.className = 'expense-item';
+item.setAttribute('data-room', room);
+item.innerHTML = <div class="exp-info"> <span class="exp-name">${desc}</span> <span class="exp-meta">${room} • ${name}</span> </div> <span class="exp-amount">-${val.toLocaleString()} ₽</span>;
+feed.insertBefore(item, feed.firstChild);
+document.getElementById('exp-desc').value = '';
+document.getElementById('exp-val').value = '';
+}
+function filterRoom(room) {
+document.querySelectorAll('.room-tag').forEach(tag => tag.classList.remove('active'));
+event.target.classList.add('active');
+document.querySelectorAll('.expense-item').forEach(item => {
+if (room === 'Все' || item.getAttribute('data-room') === room) {
+item.style.display = 'flex';
+} else {
+item.style.display = 'none';
+}
+});
+}
+function burnContractor() {
+if (tg && tg.HapticFeedback) {
+try { tg.HapticFeedback.notificationOccurred('error'); } catch(e){}
+}
+const canvas = document.getElementById('flame-canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+canvas.style.display = 'block';
+let particles = [];
+function createParticle() {
+return {
+x: canvas.width / 2 + (Math.random() * 140 - 70),
+y: canvas.height + 20,
+speedX: Math.random() * 6 - 3,
+speedY: Math.random() * -8 - 5,
+radius: Math.random() * 30 + 15,
+life: 1.0,
+decay: Math.random() * 0.02 + 0.015,
+color: Math.random() > 0.4 ? 'orange' : 'red'
+};
+}
+for(let i=0; i<40; i++) particles.push(createParticle());
+let duration = 0;
+function animateFlames() {
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+ctx.globalCompositeOperation = 'screen';
+if (duration < 100) {
+for(let i=0; i<5; i++) particles.push(createParticle());
+}
+for (let i = 0; i < particles.length; i++) {
+let p = particles[i];
+ctx.beginPath();
+let gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius);
+if(p.color === 'orange') {
+gradient.addColorStop(0, rgba(255, 165, 0, ${p.life}));
+gradient.addColorStop(0.5, rgba(255, 69, 0, ${p.life * 0.6}));
+} else {
+gradient.addColorStop(0, rgba(255, 0, 0, ${p.life}));
+gradient.addColorStop(0.5, rgba(139, 0, 0, ${p.life * 0.4}));
+}
+gradient.addColorStop(1, 'rgba(0,0,0,0)');
+ctx.fillStyle = gradient;
+ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+ctx.fill();
+p.x += p.speedX;
+p.y += p.speedY;
+p.life -= p.decay;
+p.radius -= 0.15;
+if (p.life <= 0 || p.radius <= 0) {
+particles.splice(i, 1);
+i--;
+}
+}
+duration++;
+if (particles.length > 0) {
+requestAnimationFrame(animateFlames);
+} else {
+canvas.style.display = 'none';
+}
+}
+animateFlames();
+}
