@@ -24,7 +24,7 @@
         .room-tag.active { background: var(--primary); color: white; }
         .input-group { margin-bottom: 10px; }
         .input-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
-        .input-group input, .input-group select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; }
+        .input-group input, .input-group select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem; }
         .expense-item { padding: 10px 0; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
         #flame-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; display: none; }
     </style>
@@ -32,6 +32,7 @@
 <body>
     <canvas id="flame-canvas"></canvas>
 
+    <!-- Сводка -->
     <div class="card">
         <h2>📊 Бюджет Ремонта</h2>
         <div style="display: flex; justify-content: space-between; font-weight: bold;">
@@ -45,6 +46,7 @@
         </div>
     </div>
 
+    <!-- Управление планом -->
     <div class="card">
         <h2>🏛️ Изменить плановый бюджет</h2>
         <div style="display:flex; gap:8px;">
@@ -53,39 +55,40 @@
         </div>
     </div>
 
+    <!-- ДИНАМИЧЕСКОЕ ДОБАВЛЕНИЕ НОВЫХ КОМНАТ -->
+    <div class="card">
+        <h2>🧱 Создать новую зону / комнату</h2>
+        <div style="display:flex; gap:8px;">
+            <input type="text" id="new-room-name" placeholder="Например: Бытовка, Коридор" style="width:70%; padding:10px; border-radius:12px; border:1px solid #cbd5e1;">
+            <button class="btn" onclick="addNewRoom()">➕</button>
+        </div>
+    </div>
+
+    <!-- Форма расходов -->
     <div class="card">
         <h2>➕ Добавить Трату вручную</h2>
         <div class="input-group"><label>Кто тратит:</label><input type="text" id="user-name" value="Пользователь"></div>
-        <div class="input-group"><label>Что куплено:</label><input type="text" id="exp-desc"></div>
-        <div class="input-group"><label>Сумма (₽):</label><input type="number" id="exp-val"></div>
-        <div class="input-group"><label>Комната:</label>
-            <select id="exp-room">
-                <option value="Кухня">🍳 Кухня</option>
-                <option value="Ванная">🛁 Ванная</option>
-                <option value="Спальня">🛏️ Спальня</option>
-                <option value="Аванс прорабу">💸 Аванс прорабу</option>
-            </select>
+        <div class="input-group"><label>Что куплено:</label><input type="text" id="exp-desc" placeholder="Штукатурка, краска..."></div>
+        <div class="input-group"><label>Сумма (₽):</label><input type="number" id="exp-val" placeholder="0"></div>
+        <div class="input-group"><label>Комната / Локация:</label>
+            <select id="exp-room"></select>
         </div>
         <button class="btn" onclick="addExpense()">Добавить ✨</button>
     </div>
 
-    <!-- МЫ ВЕРНУЛИ ФИЛЬТРЫ КОМНАТ НА МЕСТО -->
+    <!-- Фильтры -->
     <div class="card">
         <h2>🧱 Фильтр зон</h2>
-        <div class="room-tags">
-            <span class="room-tag active" onclick="filterRoom('Все', this)">Все 🏡</span>
-            <span class="room-tag" onclick="filterRoom('Кухня', this)">🍳 Кухня</span>
-            <span class="room-tag" onclick="filterRoom('Ванная', this)">🛁 Ванная</span>
-            <span class="room-tag" onclick="filterRoom('Спальня', this)">🛏️ Спальня</span>
-            <span class="room-tag" onclick="filterRoom('Аванс прорабу', this)">💸 Авансы</span>
-        </div>
+        <div class="room-tags" id="filter-tags-container"></div>
     </div>
 
+    <!-- Лента -->
     <div class="card">
         <h2>📜 Лента расходов</h2>
         <div id="expense-feed"></div>
     </div>
 
+    <!-- Огонь -->
     <div class="card" style="text-align: center; background: #fff5f5; border: 1px solid #fee2e2;">
         <button class="btn btn-furnace-small" onclick="burnContractor()">🔥 Отправить прораба в кипящий котел</button>
     </div>
@@ -95,13 +98,13 @@
         
         let planBudget = 500000;
         let expenses = [];
+        let rooms = [];
         let initData = "";
         let projectID = "";
 
         if (window.Telegram && window.Telegram.WebApp) {
             const tg = window.Telegram.WebApp;
-            tg.ready();
-            tg.expand();
+            tg.ready(); tg.expand();
             initData = tg.initData || "";
             if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 const user = tg.initDataUnsafe.user;
@@ -120,6 +123,7 @@
                     const data = await res.json();
                     planBudget = data.budget;
                     expenses = data.expenses;
+                    rooms = data.rooms || ["Кухня 🍳", "Ванная 🛁", "Спальня 🛏️", "Аванс прорабу 💸"];
                     projectID = data.pid;
                     renderUI();
                 }
@@ -127,6 +131,7 @@
         }
 
         function renderUI() {
+            // Считаем бюджет
             let totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
             let percent = planBudget > 0 ? Math.round((totalSpent / planBudget) * 100) : 0;
             document.getElementById('percent-text').innerText = percent + '%';
@@ -135,6 +140,27 @@
             document.getElementById('ui-plan').innerText = planBudget.toLocaleString() + ' ₽';
             document.getElementById('budget-left').innerText = (planBudget - totalSpent).toLocaleString() + ' ₽';
 
+            // Обновляем выпадающий список комнат в форме
+            const select = document.getElementById('exp-room');
+            select.innerHTML = '';
+            rooms.forEach(r => {
+                let opt = document.createElement('option');
+                opt.value = r; opt.innerText = r;
+                select.appendChild(opt);
+            });
+
+            // Обновляем теги фильтров на экране
+            const filterContainer = document.getElementById('filter-tags-container');
+            filterContainer.innerHTML = '<span class="room-tag active" onclick="filterRoom(\'Все\', this)">Все 🏡</span>';
+            rooms.forEach(r => {
+                let span = document.createElement('span');
+                span.className = 'room-tag';
+                span.innerText = r;
+                span.onclick = function() { filterRoom(r, this); };
+                filterContainer.appendChild(span);
+            });
+
+            // Рисуем ленту
             const feed = document.getElementById('expense-feed');
             feed.innerHTML = '';
             expenses.forEach(e => {
@@ -146,47 +172,59 @@
             });
         }
 
+        async function addNewRoom() {
+            const name = document.getElementById('new-room-name').value.trim();
+            if(!name) return;
+            rooms.push(name);
+            renderUI();
+            try {
+                await fetch(`${BACKEND_URL}/api/add_room`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ initData: initData, pid: projectID, room_name: name })
+                });
+            } catch(e){}
+            document.getElementById('new-room-name').value = '';
+            loadData();
+        }
+
         async function saveBudget() {
             const val = parseInt(document.getElementById('new-budget').value);
             if(!val) return;
             await fetch(`${BACKEND_URL}/api/set_budget`, {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ initData: initData, pid: projectID, budget: val })
-            });
-            loadData();
-            document.getElementById('new-budget').value = '';
-        }
-
-        async function addExpense() {
-            const name = document.getElementById('user-name').value;
-            const desc = document.getElementById('exp-desc').value;
-            const val = parseInt(document.getElementById('exp-val').value);
-            const room = document.getElementById('exp-room').value;
-            if(!desc || !val) return;
-
-            await fetch(`${BACKEND_URL}/api/add_expense`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ initData: initData, pid: projectID, amount: val, category: room, description: desc, user_name: name })
-            });
-            loadData();
-            document.getElementById('exp-desc').value = '';
-            document.getElementById('exp-val').value = '';
-        }
-
-        function filterRoom(room, el) {
-            document.querySelectorAll('.room-tag').forEach(t => t.classList.remove('active'));
-            el.classList.add('active');
-            document.querySelectorAll('.expense-item').forEach(item => {
-                if(room === 'Все' || item.getAttribute('data-room') === room) item.style.display = 'flex';
-                else item.style.display = 'none';
-            });
-        }
-
-        function burnContractor() {
-            const canvas = document.getElementById('flame-canvas');
-            const ctx = canvas.getContext('2d');
+headers: {'Content-Type': 'application/json'},
+body: JSON.stringify({ initData: initData, pid: projectID, budget: val })
+});
+loadData();
+document.getElementById('new-budget').value = '';
+}
+async function addExpense() {
+const name = document.getElementById('user-name').value;
+const desc = document.getElementById('exp-desc').value;
+const val = parseInt(document.getElementById('exp-val').value);
+const room = document.getElementById('exp-room').value;
+if(!desc || !val) return;
+await fetch(${BACKEND_URL}/api/add_expense, {
+method: 'POST',
+headers: {'Content-Type': 'application/json'},
+body: JSON.stringify({ initData: initData, pid: projectID, amount: val, category: room, description: desc, user_name: name })
+});
+loadData();
+document.getElementById('exp-desc').value = '';
+document.getElementById('exp-val').value = '';
+}
+function filterRoom(room, el) {
+document.querySelectorAll('.room-tag').forEach(t => t.classList.remove('active'));
+el.classList.add('active');
+document.querySelectorAll('.expense-item').forEach(item => {
+if(room === 'Все' || item.getAttribute('data-room') === room) item.style.display = 'flex';
+else item.style.display = 'none';
+});
+}
+function burnContractor() {
+const canvas = document.getElementById('flame-canvas');
+const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth; canvas.height = window.innerHeight;
 canvas.style.display = 'block';
 let particles = [];
