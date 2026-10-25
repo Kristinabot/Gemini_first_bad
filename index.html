@@ -32,7 +32,6 @@
 <body>
     <canvas id="flame-canvas"></canvas>
 
-    <!-- Сводка -->
     <div class="card">
         <h2>📊 Бюджет Ремонта</h2>
         <div style="display: flex; justify-content: space-between; font-weight: bold;">
@@ -41,12 +40,11 @@
         </div>
         <div class="progress-container"><div id="progress-bar" class="progress-bar"></div></div>
         <div class="stats-grid">
-            <div class="stat-item"><span>План трат 🏛️</span><strong id="ui-plan">0 ₽</strong></div>
-            <div class="stat-item"><span>Остаток 🪙</span><strong id="budget-left" style="color:var(--accent-green);">0 ₽</strong></div>
+            <div class="stat-item"><span>План трат 🏛️</span><strong id="ui-plan">500 000 ₽</strong></div>
+            <div class="stat-item"><span>Остаток 🪙</span><strong id="budget-left" style="color:var(--accent-green);">500 000 ₽</strong></div>
         </div>
     </div>
 
-    <!-- Управление планом -->
     <div class="card">
         <h2>🏛️ Изменить плановый бюджет</h2>
         <div style="display:flex; gap:8px;">
@@ -55,7 +53,6 @@
         </div>
     </div>
 
-    <!-- ДИНАМИЧЕСКОЕ ДОБАВЛЕНИЕ НОВЫХ КОМНАТ -->
     <div class="card">
         <h2>🧱 Создать новую зону / комнату</h2>
         <div style="display:flex; gap:8px;">
@@ -64,11 +61,10 @@
         </div>
     </div>
 
-    <!-- Форма расходов -->
     <div class="card">
         <h2>➕ Добавить Трату вручную</h2>
-        <div class="input-group"><label>Кто тратит:</label><input type="text" id="user-name" value="Пользователь"></div>
-        <div class="input-group"><label>Что куплено:</label><input type="text" id="exp-desc" placeholder="Штукатурка, краска..."></div>
+        <div class="input-group"><label>Кто тратит:</label><input type="text" id="user-name" value="Кристина"></div>
+        <div class="input-group"><label>Что куплено:</label><input type="text" id="exp-desc" placeholder="Штукатурка, кирпич..."></div>
         <div class="input-group"><label>Сумма (₽):</label><input type="number" id="exp-val" placeholder="0"></div>
         <div class="input-group"><label>Комната / Локация:</label>
             <select id="exp-room"></select>
@@ -76,19 +72,16 @@
         <button class="btn" onclick="addExpense()">Добавить ✨</button>
     </div>
 
-    <!-- Фильтры -->
     <div class="card">
         <h2>🧱 Фильтр зон</h2>
         <div class="room-tags" id="filter-tags-container"></div>
     </div>
 
-    <!-- Лента -->
     <div class="card">
         <h2>📜 Лента расходов</h2>
         <div id="expense-feed"></div>
     </div>
 
-    <!-- Огонь -->
     <div class="card" style="text-align: center; background: #fff5f5; border: 1px solid #fee2e2;">
         <button class="btn btn-furnace-small" onclick="burnContractor()">🔥 Отправить прораба в кипящий котел</button>
     </div>
@@ -98,9 +91,9 @@
         
         let planBudget = 500000;
         let expenses = [];
-        let rooms = [];
+        let rooms = ["Кухня 🍳", "Ванная 🛁", "Спальня 🛏️", "Аванс прорабу 💸"];
         let initData = "";
-        let projectID = "";
+        let projectID = "demo";
 
         if (window.Telegram && window.Telegram.WebApp) {
             const tg = window.Telegram.WebApp;
@@ -109,7 +102,44 @@
             if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 const user = tg.initDataUnsafe.user;
                 document.getElementById('user-name').value = user.username ? '@' + user.username : user.first_name;
+                projectID = String(user.id);
             }
+        }
+
+        function renderUI() {
+            let totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
+            let percent = planBudget > 0 ? Math.round((totalSpent / planBudget) * 100) : 0;
+            document.getElementById('percent-text').innerText = percent + '%';
+            document.getElementById('progress-bar').style.width = Math.min(percent, 100) + '%';
+            document.getElementById('total-spent').innerText = totalSpent.toLocaleString() + ' ₽';
+            document.getElementById('ui-plan').innerText = planBudget.toLocaleString() + ' ₽';
+            document.getElementById('budget-left').innerText = (planBudget - totalSpent).toLocaleString() + ' ₽';
+
+            const select = document.getElementById('exp-room');
+            select.innerHTML = '';
+            rooms.forEach(r => {
+                let opt = document.createElement('option');
+                opt.value = r; opt.innerText = r; select.appendChild(opt);
+            });
+
+            const filterContainer = document.getElementById('filter-tags-container');
+            filterContainer.innerHTML = '<span class="room-tag active" onclick="filterRoom(\'Все\', this)">Все 🏡</span>';
+            rooms.forEach(r => {
+                let span = document.createElement('span');
+                span.className = 'room-tag'; span.innerText = r;
+                span.onclick = function() { filterRoom(r, this); };
+                filterContainer.appendChild(span);
+            });
+
+            const feed = document.getElementById('expense-feed');
+            feed.innerHTML = '';
+            expenses.forEach(e => {
+                const item = document.createElement('div');
+                item.className = 'expense-item';
+                item.setAttribute('data-room', e.category);
+                item.innerHTML = `<div><strong>${e.description}</strong><br><small>${e.category} • ${e.user_name}</small></div><span class="exp-amount">-${e.amount.toLocaleString()} ₽</span>`;
+                feed.appendChild(item);
+            });
         }
 
         async function loadData() {
@@ -123,94 +153,52 @@
                     const data = await res.json();
                     planBudget = data.budget;
                     expenses = data.expenses;
-                    rooms = data.rooms || ["Кухня 🍳", "Ванная 🛁", "Спальня 🛏️", "Аванс прорабу 💸"];
+                    rooms = data.rooms || rooms;
                     projectID = data.pid;
-                    renderUI();
                 }
-            } catch(e) { console.error(e); }
+            } catch(e) {}
+            renderUI();
         }
 
-        function renderUI() {
-            // Считаем бюджет
-            let totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
-            let percent = planBudget > 0 ? Math.round((totalSpent / planBudget) * 100) : 0;
-            document.getElementById('percent-text').innerText = percent + '%';
-            document.getElementById('progress-bar').style.width = Math.min(percent, 100) + '%';
-            document.getElementById('total-spent').innerText = totalSpent.toLocaleString() + ' ₽';
-            document.getElementById('ui-plan').innerText = planBudget.toLocaleString() + ' ₽';
-            document.getElementById('budget-left').innerText = (planBudget - totalSpent).toLocaleString() + ' ₽';
-
-            // Обновляем выпадающий список комнат в форме
-            const select = document.getElementById('exp-room');
-            select.innerHTML = '';
-            rooms.forEach(r => {
-                let opt = document.createElement('option');
-                opt.value = r; opt.innerText = r;
-                select.appendChild(opt);
-            });
-
-            // Обновляем теги фильтров на экране
-            const filterContainer = document.getElementById('filter-tags-container');
-            filterContainer.innerHTML = '<span class="room-tag active" onclick="filterRoom(\'Все\', this)">Все 🏡</span>';
-            rooms.forEach(r => {
-                let span = document.createElement('span');
-                span.className = 'room-tag';
-                span.innerText = r;
-                span.onclick = function() { filterRoom(r, this); };
-                filterContainer.appendChild(span);
-            });
-
-            // Рисуем ленту
-            const feed = document.getElementById('expense-feed');
-            feed.innerHTML = '';
-            expenses.forEach(e => {
-                const item = document.createElement('div');
-                item.className = 'expense-item';
-                item.setAttribute('data-room', e.category);
-                item.innerHTML = `<div><strong>${e.description}</strong><br><small>${e.category} • ${e.user_name}</small></div><span class="exp-amount">-${e.amount.toLocaleString()} ₽</span>`;
-                feed.appendChild(item);
-            });
-        }
-
-        async function addNewRoom() {
+        function addNewRoom() {
             const name = document.getElementById('new-room-name').value.trim();
             if(!name) return;
             rooms.push(name);
             renderUI();
-            try {
-                await fetch(`${BACKEND_URL}/api/add_room`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ initData: initData, pid: projectID, room_name: name })
-                });
-            } catch(e){}
+            fetch(`${BACKEND_URL}/api/add_room`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ initData: initData, pid: projectID, room_name: name })
+            }).catch(()=>{});
             document.getElementById('new-room-name').value = '';
-            loadData();
         }
 
-        async function saveBudget() {
+        function saveBudget() {
             const val = parseInt(document.getElementById('new-budget').value);
             if(!val) return;
-            await fetch(`${BACKEND_URL}/api/set_budget`, {
+            planBudget = val;
+            renderUI();
+            fetch(`${BACKEND_URL}/api/set_budget`, {
                 method: 'POST',
-headers: {'Content-Type': 'application/json'},
-body: JSON.stringify({ initData: initData, pid: projectID, budget: val })
-});
-loadData();
-document.getElementById('new-budget').value = '';
-}
-async function addExpense() {
-const name = document.getElementById('user-name').value;
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ initData: initData, pid: projectID, budget: val })
+            }).catch(()=>{});
+            document.getElementById('new-budget').value = '';
+        }
+
+        function addExpense() {
+            const name = document.getElementById('user-name').value;
 const desc = document.getElementById('exp-desc').value;
 const val = parseInt(document.getElementById('exp-val').value);
 const room = document.getElementById('exp-room').value;
 if(!desc || !val) return;
-await fetch(${BACKEND_URL}/api/add_expense, {
+expenses.unshift({amount: val, category: room, description: desc, user_name: name});
+renderUI();
+fetch(${BACKEND_URL}/api/add_expense, {
 method: 'POST',
 headers: {'Content-Type': 'application/json'},
 body: JSON.stringify({ initData: initData, pid: projectID, amount: val, category: room, description: desc, user_name: name })
-});
-loadData();
+}).catch(()=>{});
 document.getElementById('exp-desc').value = '';
 document.getElementById('exp-val').value = '';
 }
