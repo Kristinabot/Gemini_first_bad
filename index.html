@@ -7,42 +7,24 @@
     <script src="https://telegram.org"></script>
     <style>
         :root {
-            --bg-color: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --primary: #4f46e5;
-            --accent-green: #10b981;
-            --danger: #ef4444;
+            --bg-color: #f8fafc; --card-bg: #ffffff; --text-main: #0f172a;
+            --text-muted: #64748b; --primary: #4f46e5; --accent-green: #10b981; --danger: #ef4444;
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0; padding: 16px;
-            display: flex; flex-direction: column; align-items: center;
-        }
-        .card {
-            background: var(--card-bg); border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-            padding: 20px; width: 100%; max-width: 400px;
-            box-sizing: border-box; margin-bottom: 12px;
-        }
-        h2 { margin: 0 0 12px 0; font-size: 1.15rem; display: flex; align-items: center; gap: 8px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 16px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: var(--card-bg); border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); padding: 20px; width: 100%; max-width: 400px; box-sizing: border-box; margin-bottom: 12px; }
+        h2 { margin: 0 0 12px 0; font-size: 1.15rem; }
         .progress-container { background: #e2e8f0; border-radius: 999px; height: 10px; overflow: hidden; margin: 12px 0; }
         .progress-bar { background: linear-gradient(90deg, var(--primary), #818cf8); height: 100%; width: 0%; transition: width 0.4s; }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .stat-item { background: #f1f5f9; padding: 10px; border-radius: 12px; font-size: 0.85rem; }
-        .stat-item span { color: var(--text-muted); display: block; margin-bottom: 2px; }
-        .btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; font-size: 0.95rem; }
-        .btn-secondary { background: #e2e8f0; color: var(--text-main); margin-top: 8px; font-size: 0.9rem; }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; }
         .btn-furnace-small { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 8px 16px; font-size: 0.85rem; border-radius: 10px; border: none; font-weight: 600; cursor: pointer; margin-top: 5px; }
         .room-tags { display: flex; flex-wrap: wrap; gap: 6px; }
         .room-tag { background: #f1f5f9; padding: 6px 12px; border-radius: 999px; font-size: 0.85rem; cursor: pointer; }
         .room-tag.active { background: var(--primary); color: white; }
         .input-group { margin-bottom: 10px; }
         .input-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; }
-        .input-group input, .input-group select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; font-size: 0.95rem; }
+        .input-group input, .input-group select { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid #cbd5e1; box-sizing: border-box; }
         .expense-item { padding: 10px 0; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
         #flame-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999; display: none; }
     </style>
@@ -50,7 +32,6 @@
 <body>
     <canvas id="flame-canvas"></canvas>
 
-    <!-- Бюджет -->
     <div class="card">
         <h2>📊 Бюджет Ремонта</h2>
         <div style="display: flex; justify-content: space-between; font-weight: bold;">
@@ -59,34 +40,25 @@
         </div>
         <div class="progress-container"><div id="progress-bar" class="progress-bar"></div></div>
         <div class="stats-grid">
-            <div class="stat-item"><span>План трат 🏛️</span><strong id="ui-plan">500 000 ₽</strong></div>
-            <div class="stat-item"><span>Остаток 🪙</span><strong id="budget-left" style="color:var(--accent-green);">500 000 ₽</strong></div>
+            <div class="stat-item"><span>План трат 🏛️</span><strong id="ui-plan">0 ₽</strong></div>
+            <div class="stat-item"><span>Остаток 🪙</span><strong id="budget-left" style="color:var(--accent-green);">0 ₽</strong></div>
         </div>
     </div>
 
-    <!-- Управление бюджетом -->
     <div class="card">
-        <h2>🏛️ Изменить плановый budget</h2>
+        <h2>🏛️ Изменить плановый бюджет</h2>
         <div style="display:flex; gap:8px;">
-            <input type="number" id="new-budget" placeholder="Введи общую сумму плана" style="width:70%; padding:10px; border-radius:12px; border:1px solid #cbd5e1;">
-            <button class="btn" onclick="saveBudget()" style="width:30%;">ОК</button>
+            <input type="number" id="new-budget" placeholder="Введи сумму" style="width:70%; padding:10px; border-radius:12px; border:1px solid #cbd5e1;">
+            <button class="btn" onclick="saveBudget()">ОК</button>
         </div>
     </div>
 
-    <!-- Совместный доступ -->
     <div class="card">
-        <h2>👥 Совместный доступ</h2>
-        <button class="btn btn-secondary" onclick="shareAccess()">🔗 Привязать устройство супруга(и)</button>
-    </div>
-
-    <!-- Ввод расходов -->
-    <div class="card">
-        <h2>➕ Добавить Расход вручную</h2>
-        <button class="btn btn-secondary" onclick="scanReceiptNotice()" style="margin-top:0; margin-bottom:12px; background:#f1f5f9;">📸 Распознать чек по фото</button>
-        <div class="input-group"><label>Кто тратит (Имя или Ник):</label><input type="text" id="user-name" value="Пользователь"></div>
-        <div class="input-group"><label>Что куплено (Описание):</label><input type="text" id="exp-desc" placeholder="Плитка, обои, аванс..."></div>
-        <div class="input-group"><label>Сумма (₽):</label><input type="number" id="exp-val" placeholder="0"></div>
-        <div class="input-group"><label>Зона / Комната 🧱:</label>
+        <h2>➕ Добавить Трату вручную</h2>
+        <div class="input-group"><label>Кто тратит:</label><input type="text" id="user-name" value="Пользователь"></div>
+        <div class="input-group"><label>Что куплено:</label><input type="text" id="exp-desc"></div>
+        <div class="input-group"><label>Сумма (₽):</label><input type="number" id="exp-val"></div>
+        <div class="input-group"><label>Комната:</label>
             <select id="exp-room">
                 <option value="Кухня">🍳 Кухня</option>
                 <option value="Ванная">🛁 Ванная</option>
@@ -94,10 +66,10 @@
                 <option value="Аванс прорабу">💸 Аванс прорабу</option>
             </select>
         </div>
-        <button class="btn" onclick="addExpense()">Добавить в ленту ✨</button>
+        <button class="btn" onclick="addExpense()">Добавить ✨</button>
     </div>
 
-    <!-- Фильтр комнат -->
+    <!-- МЫ ВЕРНУЛИ ФИЛЬТРЫ КОМНАТ НА МЕСТО -->
     <div class="card">
         <h2>🧱 Фильтр зон</h2>
         <div class="room-tags">
@@ -109,61 +81,54 @@
         </div>
     </div>
 
-    <!-- Лента расходов -->
     <div class="card">
         <h2>📜 Лента расходов</h2>
-        <div id="expense-feed">
-            <div style="text-align:center; color:var(--text-muted); font-size:0.9rem; padding:10px;">Загрузка данных с сервера...</div>
-        </div>
+        <div id="expense-feed"></div>
     </div>
 
-    <!-- Кнопка котла -->
     <div class="card" style="text-align: center; background: #fff5f5; border: 1px solid #fee2e2;">
-        <span style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 4px;">Психологическая разгрузка:</span>
         <button class="btn btn-furnace-small" onclick="burnContractor()">🔥 Отправить прораба в кипящий котел</button>
     </div>
 
     <script>
-        // ВСТАВЬ СЮДА СВОЮ ССЫЛКУ ИЗ ВЕРХА СТРАНИЦЫ RENDER (БЕЗ КОСОЙ ЧЕРТЫ В КОНЦЕ)
-        const BACKEND_URL = "repair-expense.vercel.app"; 
+        const BACKEND_URL = "https://vercel.app"; 
         
-        const urlParams = new URLSearchParams(window.location.search);
-        const pid = urlParams.get('pid') || "demo_user";
-
         let planBudget = 500000;
         let expenses = [];
-        let tg = null;
+        let initData = "";
+        let projectID = "";
 
-        try {
-            if (window.Telegram && window.Telegram.WebApp) {
-                tg = window.Telegram.WebApp;
-                tg.ready();
-                tg.expand();
-                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                    const user = tg.initDataUnsafe.user;
-                    document.getElementById('user-name').value = user.username ? '@' + user.username : user.first_name;
-                }
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+            initData = tg.initData || "";
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const user = tg.initDataUnsafe.user;
+                document.getElementById('user-name').value = user.username ? '@' + user.username : user.first_name;
             }
-        } catch(e){}
+        }
 
-        // Загрузка данных теперь работает асинхронно и НЕ блокирует кнопки!
         async function loadData() {
             try {
-                const res = await fetch(`${BACKEND_URL}/api/get_data?pid=${pid}`);
-                const data = await res.json();
-                planBudget = data.budget;
-                expenses = data.expenses;
-                renderUI();
-            } catch(e) { 
-                console.error("Сервер спит или настраивается, включаем демо-режим");
-                renderUI();
-            }
+                const res = await fetch(`${BACKEND_URL}/api/get_data`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ initData: initData })
+                });
+                if (res.status === 200) {
+                    const data = await res.json();
+                    planBudget = data.budget;
+                    expenses = data.expenses;
+                    projectID = data.pid;
+                    renderUI();
+                }
+            } catch(e) { console.error(e); }
         }
 
         function renderUI() {
             let totalSpent = expenses.reduce((sum, e) => sum + e.amount, 0);
             let percent = planBudget > 0 ? Math.round((totalSpent / planBudget) * 100) : 0;
-            
             document.getElementById('percent-text').innerText = percent + '%';
             document.getElementById('progress-bar').style.width = Math.min(percent, 100) + '%';
             document.getElementById('total-spent').innerText = totalSpent.toLocaleString() + ' ₽';
@@ -172,9 +137,6 @@
 
             const feed = document.getElementById('expense-feed');
             feed.innerHTML = '';
-            if(expenses.length === 0) {
-                feed.innerHTML = '<div style="text-align:center; color:var(--text-muted); font-size:0.9rem; padding:10px;">Лента пока пуста. Внесите первую трату!</div>';
-            }
             expenses.forEach(e => {
                 const item = document.createElement('div');
                 item.className = 'expense-item';
@@ -185,60 +147,46 @@
         }
 
         async function saveBudget() {
-const val = parseInt(document.getElementById('new-budget').value);
-if(!val || val <= 0) return;
-planBudget = val;
-renderUI();
-try {
-await fetch(${BACKEND_URL}/api/set_budget, {
-method: 'POST',
-headers: {'Content-Type': 'application/json'},
-body: JSON.stringify({pid: pid, budget: val})
-});
-} catch(e){}
-document.getElementById('new-budget').value = '';
-}
-async function addExpense() {
-const name = document.getElementById('user-name').value || "Пользователь";
-const desc = document.getElementById('exp-desc').value;
-const val = parseInt(document.getElementById('exp-val').value);
-const room = document.getElementById('exp-room').value;
-if(!desc || !val || val <= 0) return;
-// Локально добавляем трату СРАЗУ, чтобы не ждать сервер!
-expenses.unshift({amount: val, category: room, description: desc, user_name: name});
-renderUI();
-document.getElementById('exp-desc').value = '';
-document.getElementById('exp-val').value = '';
-try {
-await fetch(${BACKEND_URL}/api/add_expense, {
-method: 'POST',
-headers: {'Content-Type': 'application/json'},
-body: JSON.stringify({pid: pid, amount: val, category: room, description: desc, user_name: name})
-});
-} catch(e){}
-}
-function shareAccess() {
-if(tg) { tg.showAlert(🔗 Ссылка-приглашение находится в чате вашего бота! Перешлите её супругу(е).); }
-else { alert("Ссылка доступна в боте."); }
-}
-function scanReceiptNotice() {
-if(tg) { tg.showAlert("📸 Просто отправьте ФОТО ЧЕКА в чат к боту — нейросеть сама всё распознает!"); }
-else { alert("Отправьте фото боту."); }
-}
-function filterRoom(room, el) {
-document.querySelectorAll('.room-tag').forEach(t => t.classList.remove('active'));
-el.classList.add('active');
-document.querySelectorAll('.expense-item').forEach(item => {
-if(room === 'Все' || item.getAttribute('data-room') === room) item.style.display = 'flex';
-else item.style.display = 'none';
-});
-}
-function burnContractor() {
-if (tg && tg.HapticFeedback) {
-try { tg.HapticFeedback.notificationOccurred('error'); } catch(e){}
-}
-const canvas = document.getElementById('flame-canvas');
-const ctx = canvas.getContext('2d');
+            const val = parseInt(document.getElementById('new-budget').value);
+            if(!val) return;
+            await fetch(`${BACKEND_URL}/api/set_budget`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ initData: initData, pid: projectID, budget: val })
+            });
+            loadData();
+            document.getElementById('new-budget').value = '';
+        }
+
+        async function addExpense() {
+            const name = document.getElementById('user-name').value;
+            const desc = document.getElementById('exp-desc').value;
+            const val = parseInt(document.getElementById('exp-val').value);
+            const room = document.getElementById('exp-room').value;
+            if(!desc || !val) return;
+
+            await fetch(`${BACKEND_URL}/api/add_expense`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ initData: initData, pid: projectID, amount: val, category: room, description: desc, user_name: name })
+            });
+            loadData();
+            document.getElementById('exp-desc').value = '';
+            document.getElementById('exp-val').value = '';
+        }
+
+        function filterRoom(room, el) {
+            document.querySelectorAll('.room-tag').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+            document.querySelectorAll('.expense-item').forEach(item => {
+                if(room === 'Все' || item.getAttribute('data-room') === room) item.style.display = 'flex';
+                else item.style.display = 'none';
+            });
+        }
+
+        function burnContractor() {
+            const canvas = document.getElementById('flame-canvas');
+            const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth; canvas.height = window.innerHeight;
 canvas.style.display = 'block';
 let particles = [];
@@ -256,10 +204,10 @@ let g = ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.radius);
 g.addColorStop(0, rgba(255,150,0,${p.life})); g.addColorStop(0.4, rgba(255,50,0,${p.life*0.5})); g.addColorStop(1, 'rgba(0,0,0,0)');
 ctx.fillStyle = g; ctx.arc(p.x,p.y,p.radius,0,Math.PI2); ctx.fill();
 p.x += p.speedX; p.y += p.speedY; p.life -= p.decay; p.radius -= 0.2;
-if(p.life <= 0 || p.radius <= 0) { particles.splice(i,1); i--; }
+if(p.life <= 0 || p.radius <= 0) { particles.splice(i, 1); i--; }
 }
 duration++;
-if(particles.length > 0) requestAnimationFrame(animate);
+if (particles.length > 0) requestAnimationFrame(animate);
 else canvas.style.display = 'none';
 }
 animate();
